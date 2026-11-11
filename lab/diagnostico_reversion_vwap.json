@@ -1,0 +1,41 @@
+{
+  "protocolo": "rev_vwap_v1",
+  "dataset_id": "e616813c7848d5ff8e522e2322749b8e73e6e11e0388cca1ed4d4eb8cc225a61",
+  "fecha": "2026-11-06T15:07:03",
+  "codigo_sha256": "90c50d31f18e1dfe",
+  "regla": {
+    "k": 2.0,
+    "dist_bps": 12.0,
+    "share_min": 0.25
+  },
+  "share_observado": 1.0,
+  "paso": true,
+  "estadisticas": {
+    "2.0": {
+      "n_senales": 11070,
+      "mediana_bps": 91.39393383967808,
+      "p25": 69.14457277595706,
+      "p75": 121.40183555587835,
+      "p90": 160.61539163895344,
+      "pct_ge_12bps": 100.0,
+      "senales_por_simbolo_dia_pct": 32.45097177029285,
+      "senales_por_sesion_media": 11.003976143141154,
+      "senales_por_sesion_p90": 23.0,
+      "senales_por_sesion_max": 34,
+      "sesiones_sin_senal_pct": 4.970178926441352
+    },
+    "3.0": {
+      "n_senales": 3475,
+      "mediana_bps": 127.17202897669725,
+      "p25": 94.40386119939521,
+      "p75": 172.69472219614707,
+      "p90": 237.04073524210685,
+      "pct_ge_12bps": 100.0,
+      "senales_por_simbolo_dia_pct": 10.186732330782986,
+      "senales_por_sesion_media": 3.4542743538767398,
+      "senales_por_sesion_p90": 9.0,
+      "senales_por_sesion_max": 33,
+      "sesiones_sin_senal_pct": 31.510934393638173
+    }
+  }
+}

@@ -1,0 +1,23 @@
+symbol,date,decision,motivo,fuente,verificacion
+ABBV,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+BAC,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+BRK.B,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+CVX,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+GS,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+HD,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+JNJ,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+JPM,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+KO,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+LLY,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+MA,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+MRK,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+MS,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+PG,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+UNH,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+V,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+WMT,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+XOM,2023-01-24,excluir,"Fallo de apertura de NYSE: sin subasta de apertura en 2,824 de 3,421 valores listados; velas de las 09:30 con precios erroneos",NYSE/SEC; Reuters y CNBC 2023-01-24,verificado_web
+AMD,2025-10-06,conservar_y_etiquetar,Gap real de +37.6% por acuerdo con OpenAI (cierre previo 164.67; apertura ~226),Prensa financiera 2025-10-06,verificado_web
+META,2022-02-03,conservar_y_etiquetar,Gap real de -24% compatible con resultados trimestrales,Conocimiento general; verificar,de_memoria
+META,2022-10-27,conservar_y_etiquetar,Gap real de -24% compatible con resultados trimestrales,Conocimiento general; verificar,de_memoria
+NVDA,2023-05-25,conservar_y_etiquetar,Gap real de +26% compatible con resultados trimestrales; cierre previo 30.54 = ~305.4/10 confirma ajuste del split 10:1,Conocimiento general; verificar,de_memoria

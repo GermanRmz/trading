@@ -1,0 +1,11 @@
+symbol,date,tipo,valor,detalle
+AMD,2025-10-06,gap_apertura_grande,0.3755,cierre_previo=164.6400 apertura=226.4600
+LLY,2023-01-24,vela_rango_extremo,0.2253,09:30
+MA,2023-01-24,vela_rango_extremo,0.2625,09:30
+META,2022-02-03,gap_apertura_grande,-0.2426,cierre_previo=322.9900 apertura=244.6450
+META,2022-10-27,gap_apertura_grande,-0.2449,cierre_previo=129.7800 apertura=98.0000
+MRK,2023-01-24,vela_rango_extremo,0.1249,09:30
+MS,2023-01-24,vela_rango_extremo,0.1307,09:30
+NVDA,2023-05-25,gap_apertura_grande,0.262,cierre_previo=30.5400 apertura=38.5400
+UNH,2023-01-24,vela_rango_extremo,0.1304,09:30
+XOM,2023-01-24,vela_rango_extremo,0.1303,09:30

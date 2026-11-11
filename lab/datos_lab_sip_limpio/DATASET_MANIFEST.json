@@ -1,0 +1,315 @@
+{
+  "creado": "2026-11-03T15:37:33",
+  "dataset_id": "e616813c7848d5ff8e522e2322749b8e73e6e11e0388cca1ed4d4eb8cc225a61",
+  "simbolos": [
+    "AAPL",
+    "ABBV",
+    "AMD",
+    "AMZN",
+    "AVGO",
+    "BAC",
+    "BRK.B",
+    "COST",
+    "CVX",
+    "DIA",
+    "GOOGL",
+    "GS",
+    "HD",
+    "IWM",
+    "JNJ",
+    "JPM",
+    "KO",
+    "LLY",
+    "MA",
+    "META",
+    "MRK",
+    "MS",
+    "MSFT",
+    "NVDA",
+    "PG",
+    "QQQ",
+    "SPY",
+    "UNH",
+    "V",
+    "WMT",
+    "XLE",
+    "XLF",
+    "XLK",
+    "XOM"
+  ],
+  "n_simbolos": 34,
+  "sesiones": 1716,
+  "rango": {
+    "inicio": "2020-01-02",
+    "fin": "2026-10-29"
+  },
+  "descarga": {
+    "feed": "sip",
+    "adjustment": "split",
+    "timeframe": "5Min",
+    "sesion": "regular 09:30-15:55 ET (inicio de vela)"
+  },
+  "calendario": {
+    "nombre": "NYSE",
+    "libreria": "pandas_market_calendars 5.5.0"
+  },
+  "pandas": "3.1.0",
+  "pares_simbolo_dia_excluidos": 73,
+  "cobertura_minima": 0.95,
+  "items_para_revision_manual": 10,
+  "limitaciones": [
+    "Universo actual: no incluye empresas deslistadas ni adquiridas (sesgo de supervivencia; favorece a estrategias que compran caidas).",
+    "Ajuste solo por splits; los dividendos NO estan ajustados.",
+    "Velas fuera de la sesion oficial NYSE retiradas (after-hours en cierres anticipados).",
+    "Dias con cobertura < 95% listados en dias_excluidos.csv; deben excluirse en los backtests.",
+    "Sin datos de cotizaciones: el spread real y el slippage no estan medidos."
+  ],
+  "archivos": {
+    "AAPL_5min.csv": {
+      "sha256": "2addbc0058f88e06a1e7bef153c16e7c7ef1c57bcf74f147718ddce8177077da",
+      "bytes": 9763138,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "ABBV_5min.csv": {
+      "sha256": "eb35e67da4936c957680e200af8bc3f173b3086bc7e69e17c6c1f54014c76a42",
+      "bytes": 9403375,
+      "filas": 133189,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "AMD_5min.csv": {
+      "sha256": "3ac7b4f041a63e0b7fd05cf6903b97a9c0fcb7bd58b6cc5102a5fdb13382d8e7",
+      "bytes": 9570881,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "AMZN_5min.csv": {
+      "sha256": "008423e451d1d9fdc3477a1fe885b25a3ca84c6043c37eeb217daf1194391539",
+      "bytes": 9651202,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "AVGO_5min.csv": {
+      "sha256": "1ae618cafc7cc831384e6914f3dc1e9a4cad634ca4ab6cc694d3278520e9f306",
+      "bytes": 9109952,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "BAC_5min.csv": {
+      "sha256": "64d9512259c46b2e6e2cc7fd6c27d05643368d119d5798f6b0206036c8810077",
+      "bytes": 9151361,
+      "filas": 133113,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "BRK.B_5min.csv": {
+      "sha256": "1b1dce6de1a2dbfcc83535123aa5806d3e4b8f709de63c47af47cfad2d96a74a",
+      "bytes": 9500323,
+      "filas": 133112,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "COST_5min.csv": {
+      "sha256": "f5b7f5d817e852c882f556518325222847c69481b222d90d2fa33b84ab434de6",
+      "bytes": 9511180,
+      "filas": 133406,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "CVX_5min.csv": {
+      "sha256": "18ce80de1ecf371fd13c2a6faccfc53d9c98d394d13aab1b433948963f8f1322",
+      "bytes": 9433212,
+      "filas": 133111,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "DIA_5min.csv": {
+      "sha256": "6118ba06222b18c6869fee9fa8b0c4ca45a3ee485966b899140fa6e917200bcf",
+      "bytes": 9419340,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "GOOGL_5min.csv": {
+      "sha256": "a0f816e43426b4d4a939519a18a2a91bf0dcc2fc81cf7a0bdb0a64244037fcd5",
+      "bytes": 9476841,
+      "filas": 133407,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "GS_5min.csv": {
+      "sha256": "cfc23e455a3efd2f72fe4a0f3402957a5be228b5f89952b167f6317b7f084940",
+      "bytes": 9437539,
+      "filas": 133177,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "HD_5min.csv": {
+      "sha256": "b234185fc385432cab340bf4c576a1b91ec69ff5e166b45c149f39ee716c5420",
+      "bytes": 9481827,
+      "filas": 133177,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "IWM_5min.csv": {
+      "sha256": "b15db682b5b5c730fb4806aa21e0a5ac86a63d88099a138902890a8ba85b1e22",
+      "bytes": 9638614,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "JNJ_5min.csv": {
+      "sha256": "c3e7584dbb2c417ffaca6d1fec8f69be4e727bc7992dab013b64ba2885d647bd",
+      "bytes": 9504286,
+      "filas": 133176,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "JPM_5min.csv": {
+      "sha256": "972ac8a487d89a606192b7fa102b35758af9af34b461698448b4e3dd358fedbb",
+      "bytes": 9536418,
+      "filas": 133176,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "KO_5min.csv": {
+      "sha256": "044f2a3a9a3a2a5156772dea0d4be582dcbf02ed82bc193d13d5e319b02c4c2e",
+      "bytes": 9035108,
+      "filas": 133190,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "LLY_5min.csv": {
+      "sha256": "ffd2fecd576d0cf94ac1b656fb3b5d2ae91f438e7c34791204bace4d80ca90be",
+      "bytes": 9539040,
+      "filas": 133109,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "MA_5min.csv": {
+      "sha256": "77aa37b62cdb044ea06b2778277061deefdcc4cc2ef7d61e69305f4631ba2140",
+      "bytes": 9427889,
+      "filas": 133114,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "META_5min.csv": {
+      "sha256": "f8fbfd1f5a1f27bdaf5e483fd824a5f54bdddd97471abca483e03f48bbf2790f",
+      "bytes": 9715679,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "MRK_5min.csv": {
+      "sha256": "06ae5763f4d37ad9882a542161c9272060b73bcd1573c66dd9c53e83de88656e",
+      "bytes": 9178455,
+      "filas": 133114,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "MS_5min.csv": {
+      "sha256": "629fe0b13f7b1353d7c5a815a98d7b4587e55c860b0db8c60a8462fea479cd4c",
+      "bytes": 9096907,
+      "filas": 133111,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "MSFT_5min.csv": {
+      "sha256": "ccfed466310c78c17fdb716461b2285cd0069854802c5bc94e7a24c2b2b783c4",
+      "bytes": 9711047,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "NVDA_5min.csv": {
+      "sha256": "f5d161af22f3f238311528db2b7a887032d99faf44c9b1c8bdb7c6fef4393cdd",
+      "bytes": 9360505,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "PG_5min.csv": {
+      "sha256": "dabb69520d49bb94feb95f9287da2589b120edbc65a769549faf307c5647cf1d",
+      "bytes": 9477812,
+      "filas": 133112,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "QQQ_5min.csv": {
+      "sha256": "dee617a6d9cb831ec73576b19a0a7c67f81f29f458732e227a06ea45d25f7799",
+      "bytes": 9725588,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "SPY_5min.csv": {
+      "sha256": "b4e2223515df5509297edeb91b4c445d5fb3e338af6e36278162db0798268778",
+      "bytes": 9757053,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "UNH_5min.csv": {
+      "sha256": "6a5200ec07670a86009008890ba4f59a84094498184760fda15edecb0e2823a6",
+      "bytes": 9477531,
+      "filas": 133102,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "V_5min.csv": {
+      "sha256": "b9934c938ff0eecf7bf401fe1834828e9a1410120f08f60be985794fabf2fd1f",
+      "bytes": 9497709,
+      "filas": 133101,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "WMT_5min.csv": {
+      "sha256": "7839fbcf84d2c1d2769be7e7cbcf93463755b31204d53abc591f6e1c26874e91",
+      "bytes": 8992030,
+      "filas": 133101,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "XLE_5min.csv": {
+      "sha256": "69c4630c31806badbe8617ef2a6bb61f195372c28d6f9cb95108340990472754",
+      "bytes": 8883278,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "XLF_5min.csv": {
+      "sha256": "b8323d9dfa12e4c6cec21f641c9addcdaf1105fe898c5faa1ac326ec45eec6c4",
+      "bytes": 9104053,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "XLK_5min.csv": {
+      "sha256": "70f28a787c024ac7e64f719bd9303a96f1899c17225b0289612904418bdb9da2",
+      "bytes": 9029241,
+      "filas": 133408,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    },
+    "XOM_5min.csv": {
+      "sha256": "9fa33c63805fed84d65bd56f8f8e7d61604b52a08187173b508396e49d03d72a",
+      "bytes": 9406967,
+      "filas": 133101,
+      "primera_vela": "2020-01-02T14:30:00Z",
+      "ultima_vela": "2026-10-29T19:55:00Z"
+    }
+  },
+  "auxiliares": {
+    "dias_excluidos.csv": {
+      "sha256": "44c9c829c067a594e0bc26023e04cc24aa89fbb8a8c43d24be1d3f121ec7cb07"
+    },
+    "integridad_revision.csv": {
+      "sha256": "e4712d452b0dfed130bee8468d3e3f7dc8846b5ff0820b63b7f7b0932158e306"
+    }
+  }
+}

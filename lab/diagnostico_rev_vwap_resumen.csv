@@ -1,0 +1,3 @@
+k,n_senales,mediana_bps,p25,p75,p90,pct_ge_12bps,senales_por_simbolo_dia_pct,senales_por_sesion_media,senales_por_sesion_p90,senales_por_sesion_max,sesiones_sin_senal_pct
+2.0,11070.0,91.39,69.14,121.4,160.62,100.0,32.45,11.0,23.0,34.0,4.97
+3.0,3475.0,127.17,94.4,172.69,237.04,100.0,10.19,3.45,9.0,33.0,31.51
