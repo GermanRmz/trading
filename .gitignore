@@ -4,3 +4,4 @@ __pycache__/
 # cache local de la carpeta ia
 ia/resultados/_*.pkl
 ia/resultados/exp1_volatilidad_predicciones.csv
+ia/resultados/exp3_trades_*.csv
