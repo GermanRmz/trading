@@ -1,0 +1,9 @@
+ticker,source_file,rows_in_file,regular_rows_after_cleaning,duplicate_timestamps_removed,invalid_ohlc_rows_removed,first_regular_timestamp,last_regular_timestamp,volume_available
+SPY,datos_alpaca_sip\SPY_5min.csv,130637,53816,0,0,2024-01-02 09:30:00-05:00,2026-10-01 15:55:00-04:00,True
+QQQ,datos_alpaca_sip\QQQ_5min.csv,131607,53815,0,0,2024-01-02 09:30:00-05:00,2026-10-01 15:55:00-04:00,True
+AAPL,datos_alpaca_sip\AAPL_5min.csv,127883,53807,0,0,2024-01-02 09:30:00-05:00,2026-10-01 15:55:00-04:00,True
+MSFT,datos_alpaca_sip\MSFT_5min.csv,119429,53773,0,0,2024-01-02 09:30:00-05:00,2026-10-01 15:55:00-04:00,True
+NVDA,datos_alpaca_sip\NVDA_5min.csv,131911,53820,0,0,2024-01-02 09:30:00-05:00,2026-10-01 15:55:00-04:00,True
+TSLA,datos_alpaca_sip\TSLA_5min.csv,132150,53820,0,0,2024-01-02 09:30:00-05:00,2026-10-01 15:55:00-04:00,True
+SOXL,datos_alpaca_sip\SOXL_5min.csv,132238,53820,0,0,2024-01-02 09:30:00-05:00,2026-10-01 15:55:00-04:00,True
+NUGT,datos_alpaca_sip\NUGT_5min.csv,81630,53576,0,0,2024-01-02 09:30:00-05:00,2026-10-01 15:55:00-04:00,True

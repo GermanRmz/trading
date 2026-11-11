@@ -1,0 +1,29 @@
+filter,exit,fecha_registro,estrategia
+00_all (control),hold_to_close,2026-10-30 15:05,ORB15
+01_vwap_aligned,hold_to_close,2026-10-30 15:05,ORB15
+02_gap_aligned,hold_to_close,2026-10-30 15:05,ORB15
+03_trend_aligned,hold_to_close,2026-10-30 15:05,ORB15
+04_vwap+trend,hold_to_close,2026-10-30 15:05,ORB15
+05_gap+vwap,hold_to_close,2026-10-30 15:05,ORB15
+06_risk_atr_normal,hold_to_close,2026-10-30 15:05,ORB15
+07_min_risk_bps,hold_to_close,2026-10-30 15:05,ORB15
+08_relvol_high,hold_to_close,2026-10-30 15:05,ORB15
+09_entry_before_11,hold_to_close,2026-10-30 15:05,ORB15
+10_vwap+trend+early,hold_to_close,2026-10-30 15:05,ORB15
+11_long_only,hold_to_close,2026-10-30 15:05,ORB15
+12_short_only,hold_to_close,2026-10-30 15:05,ORB15
+13_vwap+relvol,hold_to_close,2026-10-30 15:05,ORB15
+00_all (control),time_13:00,2026-10-30 15:05,ORB15
+01_vwap_aligned,time_13:00,2026-10-30 15:05,ORB15
+02_gap_aligned,time_13:00,2026-10-30 15:05,ORB15
+03_trend_aligned,time_13:00,2026-10-30 15:05,ORB15
+04_vwap+trend,time_13:00,2026-10-30 15:05,ORB15
+05_gap+vwap,time_13:00,2026-10-30 15:05,ORB15
+06_risk_atr_normal,time_13:00,2026-10-30 15:05,ORB15
+07_min_risk_bps,time_13:00,2026-10-30 15:05,ORB15
+08_relvol_high,time_13:00,2026-10-30 15:05,ORB15
+09_entry_before_11,time_13:00,2026-10-30 15:05,ORB15
+10_vwap+trend+early,time_13:00,2026-10-30 15:05,ORB15
+11_long_only,time_13:00,2026-10-30 15:05,ORB15
+12_short_only,time_13:00,2026-10-30 15:05,ORB15
+13_vwap+relvol,time_13:00,2026-10-30 15:05,ORB15
