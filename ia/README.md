@@ -10,6 +10,7 @@ registro de hipótesis con Bonferroni). No tocan VAL ni el tramo sellado.
 | `ia_exp1_volatilidad.py` | Experimento 1: pronóstico de la volatilidad del día siguiente. No es hipótesis de trading. |
 | `ia_exp2_lgbm_resto_dia.py` | Experimento 2: LightGBM elige 5 largos y 5 cortos a las 10:30 hasta el cierre. Registra H5 y H6. |
 | `ia_exp3_lgbm_horario.py` | Experimento 3: predicción horaria de dirección a 1 hora, 2 horas y cierre. Registra H7, H8 y H9. |
+| `ia_exp4_red_secuencias.py` | Experimento 4: red TCN + Transformer con atención sobre secuencias de velas (PyTorch). Registra H10. **Pendiente de ejecutar.** |
 | `resultados/` | Salidas de cada experimento. |
 
 Validación: walk-forward dentro de DEV (se predice 2021, 2022 y 2023 entrenando con los años anteriores).
@@ -22,6 +23,9 @@ Validación: walk-forward dentro de DEV (se predice 2021, 2022 y 2023 entrenando
     python ia_exp2_lgbm_resto_dia.py ejecutar    # ya ejecutado: H5 y H6 están evaluadas en DEV y no se repiten
     python ia_exp3_lgbm_horario.py prueba
     python ia_exp3_lgbm_horario.py ejecutar      # ya ejecutado: H7, H8 y H9 evaluadas en DEV
+    pip install torch                            # para GPU NVIDIA: comando de https://pytorch.org/get-started/locally/
+    python ia_exp4_red_secuencias.py prueba      # unos 13 min en CPU de 4 núcleos; no registra
+    python ia_exp4_red_secuencias.py ejecutar    # PENDIENTE: registra H10 y la evalúa en DEV, una sola vez
 
 ## Resultados (noviembre 2026)
 
