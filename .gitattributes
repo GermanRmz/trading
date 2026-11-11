@@ -1,0 +1,5 @@
+# Estos dos archivos se congelaron con saltos de linea de Windows (CRLF); se fijan asi para que
+# el hash del manifiesto coincida en cualquier sistema.
+lab/datos_lab_sip_limpio/dias_excluidos.csv text eol=crlf
+lab/datos_lab_sip_limpio/integridad_revision.csv text eol=crlf
+lab/exclusiones_manuales.csv text eol=crlf
