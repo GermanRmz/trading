@@ -4,8 +4,11 @@ IA - EXPERIMENTO 4: red profunda sobre secuencias de velas (TCN + atencion) - pr
 Pensado para ejecutarse en tu computadora (usa la tarjeta grafica si PyTorch la detecta; si no, CPU).
 
     pip install torch            # para GPU NVIDIA, usa el comando que da https://pytorch.org/get-started/locally/
-    python ia_exp4_red_secuencias.py prueba     # tuberia con etiquetas barajadas, corta; NO registra
-    python ia_exp4_red_secuencias.py ejecutar   # registra H10 y la evalua en DEV (una sola vez)
+    python adv_trading/red_secuencias.py prueba     # tuberia con etiquetas barajadas, corta; NO registra
+    python adv_trading/red_secuencias.py ejecutar   # registra H10 y la evalua en DEV (una sola vez)
+
+Necesita el repositorio completo: usa el codigo de `ia/` y el dataset y el marco de `lab/`.
+Los resultados se guardan en `adv_trading/resultados/`.
 
 DEFINICIONES FIJAS (no se cambian tras ver resultados; cualquier cambio = otra hipotesis):
   Universo, decisiones, validacion, regla de operacion y costos: IDENTICOS a H9 del experimento 3
@@ -33,11 +36,19 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+AQUI = Path(__file__).resolve().parent
+IA = AQUI.parent / "ia"
+if not (IA / "ia_datos.py").exists():
+    raise SystemExit(f"No encuentro {IA}. Esta carpeta debe estar dentro del repositorio completo (junto a ia/ y lab/).")
+sys.path.insert(0, str(IA))
+
 import ia_datos as D
 import ia_exp3_lgbm_horario as E
 import ia_modelos as MOD
 
 M = D.M
+SALIDA = AQUI / "resultados"
+SALIDA.mkdir(exist_ok=True)
 PROTOCOLO = "ia_v3"
 FAMILIA = "ia_red_secuencias"
 NOMBRE = "H10_tcn_atencion_cierre"
@@ -49,8 +60,8 @@ CFG = dict(canales=96, dilataciones=(1, 2, 4, 8, 16), capas_transformer=2, cabez
 
 def _code_sha():
     h = hashlib.sha256()
-    for f in ("ia_exp4_red_secuencias.py", "ia_exp3_lgbm_horario.py", "ia_modelos.py", "ia_datos.py"):
-        h.update((Path(__file__).resolve().parent / f).read_bytes())
+    for f in (Path(__file__).resolve(), IA / "ia_exp3_lgbm_horario.py", IA / "ia_modelos.py", IA / "ia_datos.py"):
+        h.update(f.read_bytes())
     return h.hexdigest()[:16]
 
 
@@ -257,7 +268,7 @@ def main():
     if reg.estado(hid)["dev_evaluada"]:
         raise SystemExit(f"{NOMBRE} ({hid}) ya se evaluo en DEV. No se repite.")
     P = predecir(ds, t)
-    P.to_csv(D.SALIDA / "exp4_predicciones_dev.csv", index=False)     # se guarda antes de evaluar, por si algo falla
+    P.to_csv(SALIDA / "exp4_predicciones_dev.csv", index=False)     # se guarda antes de evaluar, por si algo falla
     T = E.operaciones(P, "y_cierre", None)
     paso, res = M.evaluar_dev(reg, ds, hid, T)
     ic_m, ic_t = E.ic(P)
@@ -268,15 +279,15 @@ def main():
     T8 = M.con_costo(T, 8.0)
     for clave in ("hora_decision", "direction"):
         tab = T8.groupby(clave).agg(n=("ret_bps", "size"), bruto=("ret_bps", "mean"), neto_8=("net_bps", "mean")).round(2)
-        tab.to_csv(D.SALIDA / f"exp4_desglose_{clave}.csv")
+        tab.to_csv(SALIDA / f"exp4_desglose_{clave}.csv")
         print(tab.to_string())
     m8 = res[8.0]
     pd.DataFrame([{"hipotesis": NOMBRE, "id": hid, "paso_DEV": paso, "n_ops": m8["n_ops"],
                    "media_op_bruta": bruto["media_por_op"], "t_conserv_bruto": bruto["t_conservador"],
                    "media_op_8": m8["media_por_op"], "t_conserv_8": m8["t_conservador"], "PF_8": m8["PF"],
-                   "acierto_direccion_pct": ac, "IC": ic_m, "t_IC": ic_t}]).to_csv(D.SALIDA / "exp4_resumen_dev.csv", index=False)
+                   "acierto_direccion_pct": ac, "IC": ic_m, "t_IC": ic_t}]).to_csv(SALIDA / "exp4_resumen_dev.csv", index=False)
     print(f"\nHipotesis en el registro: {reg.n_hipotesis()} | umbral t: {reg.umbral_t():.2f}")
-    print("Sube estos archivos al repositorio: ia/resultados/exp4_*.csv y lab/registro_lab/registro_hipotesis.jsonl")
+    print("Sube estos archivos al repositorio: adv_trading/resultados/exp4_*.csv y lab/registro_lab/registro_hipotesis.jsonl")
 
 
 if __name__ == "__main__":
