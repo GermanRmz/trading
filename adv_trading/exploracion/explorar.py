@@ -106,6 +106,7 @@ def _correr(arg):
     hasta, anios = trabajo["pliegue_def"]
     ent, val, pru = _mascaras(conj, hasta, anios, cfg.frac_validacion)
     conj.escalar(ent)
+    conj.fijar_costo(trabajo["objetivo"], ent, cfg.costo_comun)
     t0 = time.time()
     red, hist = PE.entrenar(cfg, conj, ent, val, trabajo["semilla"], objetivo=trabajo["objetivo"])
     P, V = PE.predecir(red, conj, val | pru, cfg)
@@ -190,12 +191,13 @@ def _evaluar(T, conj, corridas, costo=8.0, objetivo=None):
     r["sharpe_suave"] = PE.sharpe_cartera(g, conj.fecha[i])
     i0, g0 = PE.ganancia_suave(conj, P, pru, 0.0)
     r["sharpe_suave_bruto"] = PE.sharpe_cartera(g0, conj.fecha[i0])
-    u, q = PE.elegir_umbral(T, P, np.flatnonzero(val), costo, conj.fecha)
+    obj = T["simbolos"].index(objetivo) if objetivo is not None else None
+    u, q = PE.elegir_umbral(conj, P, val, costo, obj)
     D = PE.discretizar(P, u, q)
     ip = np.flatnonzero(pru)
-    neto, n_ops, rot = PE.ganancia_dura({"RB": T["RB"][ip]}, D[ip], costo)
+    neto, n_ops, rot = PE.ganancia_dura(T["RB"][ip], D[ip], costo)
     r["umbral"] = u
-    r["sharpe_duro"] = PE.sharpe_cartera(neto / (1e4 * T["sig"][ip]), conj.fecha[ip])
+    r["sharpe_duro"] = PE.sharpe_cartera(PE.ganancia_dura_norm(conj, D[ip], ip, costo), conj.fecha[ip])
     r["ops_dia"] = float(n_ops.mean())
     r["bps_dia"] = float(neto.mean())
     if objetivo is not None:
