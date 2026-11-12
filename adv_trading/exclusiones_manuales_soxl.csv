@@ -1,0 +1,2 @@
+symbol,date,decision,motivo,fuente,verificacion
+TSM,2023-01-24,excluir,"Fallo de apertura de NYSE del 2023-01-24 (TSM cotiza en NYSE); por analogia con las exclusiones del laboratorio",lab/exclusiones_manuales.csv,por_analogia_revisar
