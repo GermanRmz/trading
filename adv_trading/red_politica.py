@@ -43,6 +43,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(AQUI))
 import pol_datos as PD  # noqa: E402
 import pol_entrenar as PE  # noqa: E402
+import pol_sintetico as PS  # noqa: E402
 import preparar_datos_soxl as PREP  # noqa: E402
 
 M = PD.M
@@ -100,16 +101,6 @@ def tabla(ds):
     T = PD.construir(ds, PREP.SIMBOLOS, PREP.CONTEXTO, M.SPLITS["dev"][1])
     pickle.dump(T, open(cache, "wb"))
     return T
-
-
-def mundo_nulo(T, semilla=2024):
-    """Copia de la tabla con el signo de cada retorno al azar por (fecha, tramo): ninguna senal es posible."""
-    rng = np.random.default_rng(semilla)
-    _, inv = np.unique(T["fecha"], return_inverse=True)
-    signo = rng.choice([-1.0, 1.0], size=(inv.max() + 1, PD.J)).astype(np.float32)[inv]
-    S = dict(T)
-    S["Y"], S["RB"] = T["Y"] * signo, T["RB"] * signo
-    return S
 
 
 def decidir(T, cfg, conjunto, anios, verbose=True):
@@ -188,12 +179,18 @@ def main():
     print(f"Tabla: {len(T['sym'])} sesiones de {len(T['simbolos'])} simbolos ({T['fecha'].min()} -> {T['fecha'].max()}); "
           f"{PREP.OBJETIVO}: {n_obj}", flush=True)
     if modo == "prueba":
-        rapido = dict(conjunto, semillas=2)
-        D, _ = decidir(mundo_nulo(T), cfg, rapido, ANIOS_DEV[-1:])
-        ops = operaciones(mundo_nulo(T), D)
-        print(f"PRUEBA en el mundo nulo (signos al azar, {ANIOS_DEV[-1]}): {len(ops)} operaciones, media bruta "
-              f"{ops['ret_bps'].mean():.2f} bps, t {ops['ret_bps'].mean() / (ops['ret_bps'].std() / np.sqrt(max(len(ops), 2))):.2f} "
-              f"(debe ser compatible con 0). La tuberia funciona de principio a fin.")
+        # Dos mundos sinteticos (no se mira ningun retorno real de DEV):
+        #   nulo     -> el resultado bruto debe ser compatible con 0
+        #   plantado -> con una senal fuerte conocida, el resultado bruto debe salir claramente positivo
+        rapido = dict(conjunto, semillas=3)
+        for nombre, S in (("mundo nulo (debe dar ~0)", PS.plantar(T)),
+                          ("senal plantada fuerte (debe dar positivo)", PS.plantar(T, "momento", PS.SENALES["momento"]))):
+            D, _ = decidir(S, cfg, rapido, ANIOS_DEV[-2:], verbose=False)
+            ops = operaciones(S, D)
+            t = ops["ret_bps"].mean() / (ops["ret_bps"].std() / np.sqrt(max(len(ops), 2))) if len(ops) > 2 else float("nan")
+            print(f"PRUEBA {nombre}: {len(ops)} operaciones en {ANIOS_DEV[-2]}-{ANIOS_DEV[-1]}, "
+                  f"media bruta {ops['ret_bps'].mean():.2f} bps por operacion, t = {t:.2f}", flush=True)
+        print("La tuberia funciona de principio a fin. No se ha registrado nada.")
         return
     reg = RegistroGlobal(ds.dataset_id, path=REGISTRO, manual_path=PREP.EXCLUSIONES)
     ds.attach(reg)

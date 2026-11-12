@@ -235,10 +235,13 @@ def entrenar(cfg, conj, entren, valid, semilla, objetivo=None, verbose=False, al
             torch.nn.utils.clip_grad_norm_(red.parameters(), 1.0)
             opt.step()
             perdidas.append(float(perdida.detach()))
-        P, _ = predecir(red, conj, valid, cfg)
-        i, g = ganancia_suave(conj, P, valid, cfg.costo_bps)
-        sv = sharpe_cartera(g, conj.fecha[i])
-        sv = -99.0 if not np.isfinite(sv) else sv
+        if cfg.paciencia > 0 or verbose:
+            P, _ = predecir(red, conj, valid, cfg)
+            i, g = ganancia_suave(conj, P, valid, cfg.costo_bps)
+            sv = sharpe_cartera(g, conj.fecha[i])
+            sv = -99.0 if not np.isfinite(sv) else sv
+        else:
+            sv = float("nan")                              # epocas fijas: no hace falta mirar la validacion
         hist.append({"epoca": ep + 1, "perdida": float(np.mean(perdidas)) if perdidas else np.nan, "sharpe_val": sv})
         if verbose:
             print(f"      epoca {ep + 1:2d}: perdida {hist[-1]['perdida']:.3f} | Sharpe validacion {sv:.2f}", flush=True)

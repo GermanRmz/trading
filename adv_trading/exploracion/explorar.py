@@ -2,21 +2,22 @@
 EXPLORACION de arquitecturas con datos ANTERIORES a 2020 (fuera de DEV, VAL y SELLADO: no toca el registro).
 
 Etapas:
-  sintetico     Senales "plantadas" sobre datos reales: se borra cualquier relacion real entre pasado y
-                futuro (signo del retorno al azar por fecha y tramo) y se anade una senal conocida. Mide
-                cuanta de esa senal recupera cada estructura, comparada con el techo (quien conoce la regla).
-  estructuras   Las ocho estructuras con datos reales: dos pliegues (entrenar hasta 2017 -> probar 2018;
-                entrenar hasta 2018 -> probar 2019), varias semillas.
-  mejoras       Variantes de la base (tamano, regularizacion, contexto, espejo, tarea auxiliar, universo...).
+  plantadas     Senales "plantadas" sobre datos reales: se borra toda relacion real entre pasado y futuro
+                (signo del retorno al azar por fecha y tramo) y se anade una senal conocida. Se entrena
+                hasta 2018 y se mide en 2019 que parte del Sharpe del "techo" (quien conoce la regla)
+                recupera cada estructura, promediando 30 sorteos del mundo nulo para quitar el azar.
+  mejoras       Lo mismo, variando un ingrediente cada vez sobre una red de referencia.
+  reales        Las estructuras con datos reales: entrenar hasta 2017 -> probar 2018, y entrenar hasta
+                2018 -> probar 2019; conjunto de varias semillas.
   analizar      Tablas a partir de las ejecuciones guardadas.
 
 Cada ejecucion se guarda en un archivo; si se interrumpe, al relanzar continua donde quedo.
 
 Uso:
-    python explorar.py sintetico   --tabla pasos_pre.pkl --salida corridas --trabajadores 4
-    python explorar.py estructuras --tabla pasos_pre.pkl --salida corridas
-    python explorar.py mejoras     --tabla pasos_pre.pkl --salida corridas
-    python explorar.py analizar    --tabla pasos_pre.pkl --salida corridas
+    python explorar.py plantadas --tabla pasos_pre.pkl --salida corridas
+    python explorar.py mejoras   --tabla pasos_pre.pkl --salida corridas
+    python explorar.py reales    --tabla pasos_pre.pkl --salida corridas
+    python explorar.py analizar  --tabla pasos_pre.pkl --salida corridas
 """
 import argparse
 import hashlib
@@ -24,7 +25,7 @@ import json
 import pickle
 import sys
 import time
-from dataclasses import asdict, replace
+from dataclasses import asdict
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -37,9 +38,28 @@ import pol_datos as PD  # noqa: E402
 import pol_entrenar as PE  # noqa: E402
 import pol_modelos as PM  # noqa: E402
 
+# Receta comun, calibrada con senales plantadas: la senal se entrena SIN costes, con simetria exacta,
+# apagado de variables, redes pequenas, mucha regularizacion y pocas epocas fijas.
+RECETA = dict(h=8, dropout=0.5, decaimiento=1e-2, lr=1e-3, lote=256, epocas=15, paciencia=0, costo_bps=0.0,
+              espejo=False, antisimetrica=True, dropout_var=0.3, recorte_x=3.0, recorte_y=4.0)
+SENALES = {"momento": 0.06, "regimen": 0.12, "memoria": 0.12}
+PLIEGUE_PLANT = ("2018-12-31", ("2019",))
 PLIEGUES = {"A": ("2017-12-31", ("2018",)), "B": ("2018-12-31", ("2019",))}
-PLIEGUE_SINT = {"S": ("2017-12-31", ("2018", "2019"))}
-SENALES = ("momento", "regimen", "memoria")
+VARIANTES = {
+    "referencia": {},
+    "h=32": {"h": 32}, "h=32, 60 epocas": {"h": 32, "epocas": 60},
+    "dropout=0.1": {"dropout": 0.1},
+    "sin apagar variables": {"dropout_var": 0.0},
+    "sin simetria": {"antisimetrica": False},
+    "simetria por aumento": {"antisimetrica": False, "espejo": True},
+    "sin recortes": {"recorte_x": 5.0, "recorte_y": 0.0},
+    "5 epocas": {"epocas": 5}, "40 epocas": {"epocas": 40},
+    "lr=3e-4": {"lr": 3e-4}, "lote=64": {"lote": 64},
+    "con coste de 8 bps al entrenar": {"costo_bps": 8.0},
+    "sin tarea de volatilidad": {"peso_vol": 0.0},
+    "contexto de 2 dias": {"dias_trozo": 3},
+    "solo el objetivo (sin universo)": {"universo": False},
+}
 _T = None
 
 
@@ -50,45 +70,59 @@ def _tabla(ruta):
     return _T
 
 
-def plantar(T, tipo, beta, semilla=123):
-    """Devuelve copia de la tabla con retornos sinteticos: nulo realista + beta x senal conocida.
+def senal(T, tipo):
+    """Regla conocida g (por muestra y tramo) que se planta en el retorno."""
+    v = T["variables"].index
+    X = T["X"]
+    if tipo == "momento":            # el movimiento del dia continua (relacion suave, visible en una variable)
+        return np.tanh(X[:, :, v("r_dia")])
+    if tipo == "regimen":            # continua solo por la tarde y en dias de volatilidad alta (interaccion)
+        return (np.sign(X[:, :, v("r_cc")]) * (X[:, :, v("rv_rel")] > 0) * (X[:, :, v("paso")] >= 0.6)).astype(np.float32)
+    if tipo == "memoria":            # lo ocurrido hasta las 10:00 marca la ultima hora (hay que recordarlo)
+        g = np.zeros(X.shape[:2], np.float32)
+        g[:, -2:] = np.tanh(X[:, :1, v("r_cc")])
+        return g
+    raise ValueError(tipo)
 
-    Nulo: el retorno real con signo al azar por (fecha, tramo), comun a todos los simbolos; conserva
+
+def plantar(T, tipo, beta, semilla=123):
+    """Copia de la tabla con retornos sinteticos: mundo nulo realista + beta x senal conocida.
+
+    Mundo nulo: el retorno real con signo al azar por (fecha, tramo), comun a todos los simbolos. Conserva
     volatilidad, horario y correlacion entre simbolos, pero rompe toda relacion con el pasado.
     """
     rng = np.random.default_rng(semilla)
-    v = T["variables"].index
-    X, Y = T["X"], T["Y"]
-    fechas, inv = np.unique(T["fecha"], return_inverse=True)
-    signo = rng.choice([-1.0, 1.0], size=(len(fechas), PD.J)).astype(np.float32)[inv]
-    nulo = Y * signo
-    escala = Y.std(axis=0, keepdims=True)                          # desviacion tipica por tramo
-    if tipo == "momento":            # el movimiento del dia continua (relacion suave, visible en una variable)
-        g = np.tanh(X[:, :, v("r_dia")])
-    elif tipo == "regimen":          # continua solo por la tarde y en dias de volatilidad alta (interaccion)
-        g = np.sign(X[:, :, v("r_cc")]) * (X[:, :, v("rv_rel")] > 0) * (X[:, :, v("paso")] >= 0.6)
-    elif tipo == "memoria":          # lo ocurrido hasta las 10:00 marca la ultima hora (hay que recordarlo)
-        g = np.zeros_like(Y)
-        g[:, -2:] = np.tanh(X[:, :1, v("r_cc")])
-    else:
-        raise ValueError(tipo)
+    _, inv = np.unique(T["fecha"], return_inverse=True)
+    signo = rng.choice([-1.0, 1.0], size=(inv.max() + 1, PD.J)).astype(np.float32)[inv]
+    g = senal(T, tipo)
     S = dict(T)
-    S["Y"] = np.clip(nulo + beta * escala * g, -5, 5).astype(np.float32)
+    S["Y"] = np.clip(T["Y"] * signo + beta * T["Y"].std(axis=0, keepdims=True) * g, -5, 5).astype(np.float32)
     S["RB"] = (1e4 * S["Y"] * T["sig"][:, None]).astype(np.float32)
-    S["_g"] = g.astype(np.float32)
     return S
+
+
+def sharpe_esperado(T, tipo, beta, P, filas, sorteos=30, semilla=7):
+    """Sharpe bruto medio de las posiciones P frente a muchos sorteos del mundo nulo (mas la senal)."""
+    rng = np.random.default_rng(semilla)
+    f = T["fecha"][filas]
+    _, inv = np.unique(f, return_inverse=True)
+    yr, plant = T["Y"][filas], beta * T["Y"].std(axis=0, keepdims=True) * senal(T, tipo)[filas]
+    out = []
+    for _ in range(sorteos):
+        sg = rng.choice([-1.0, 1.0], size=(inv.max() + 1, PD.J))[inv]
+        out.append(PE.sharpe_cartera((P * (yr * sg + plant)).sum(1), f))
+    return float(np.mean(out))
 
 
 def _mascaras(conj, hasta, anios, frac):
     antes = conj.fecha <= hasta
     f = np.unique(conj.fecha[antes])
-    corte = f[int((1 - frac) * len(f))]
+    corte = f[min(int((1 - frac) * len(f)), len(f) - 1)]
     return antes & (conj.fecha < corte), antes & (conj.fecha >= corte), np.isin(conj.anio, anios)
 
 
 def _id(trabajo):
-    crudo = json.dumps(trabajo, sort_keys=True, default=str)
-    return hashlib.sha1(crudo.encode()).hexdigest()[:12]
+    return hashlib.sha1(json.dumps(trabajo, sort_keys=True, default=str).encode()).hexdigest()[:12]
 
 
 def _correr(arg):
@@ -98,21 +132,24 @@ def _correr(arg):
     destino = Path(salida) / f"{trabajo['etapa']}_{_id(trabajo)}.pkl"
     if destino.exists():
         return destino.name, 0.0
-    T = _tabla(ruta_tabla)
-    if trabajo.get("senal"):
-        T = plantar(T, *trabajo["senal"])
+    T0 = _tabla(ruta_tabla)
+    plantada = trabajo.get("senal")
+    T = plantar(T0, *plantada) if plantada else T0
     cfg = PE.Config(**trabajo["cfg"])
     conj = PE.Conjunto(T)
     hasta, anios = trabajo["pliegue_def"]
-    ent, val, pru = _mascaras(conj, hasta, anios, cfg.frac_validacion)
-    conj.escalar(ent)
+    ent, val, pru = _mascaras(conj, hasta, anios, 0.0 if plantada else cfg.frac_validacion)
+    if plantada:
+        ent = ent | val
+    conj.escalar(ent, cfg.recorte_x)
     conj.fijar_costo(trabajo["objetivo"], ent, cfg.costo_comun)
     t0 = time.time()
     red, hist = PE.entrenar(cfg, conj, ent, val, trabajo["semilla"], objetivo=trabajo["objetivo"])
-    P, V = PE.predecir(red, conj, val | pru, cfg)
-    filas = np.flatnonzero(val | pru)
-    out = {"trabajo": trabajo, "filas": filas, "P": P[filas].astype(np.float32), "V": V[filas].astype(np.float32),
-           "es_val": val[filas], "hist": hist, "segundos": time.time() - t0, "parametros": PM.n_parametros(red)}
+    marca = pru if plantada else (val | pru)
+    P, V = PE.predecir(red, conj, marca, cfg)
+    filas = np.flatnonzero(marca & np.isfinite(P[:, 0]))
+    out = {"trabajo": trabajo, "filas": filas, "P": P[filas], "V": V[filas], "es_val": val[filas],
+           "segundos": time.time() - t0, "parametros": PM.n_parametros(red)}
     tmp = destino.with_suffix(".tmp")
     pickle.dump(out, open(tmp, "wb"))
     tmp.replace(destino)
@@ -128,175 +165,156 @@ def _lanzar(trabajos, a):
             print(f"[{k}/{len(args)}] {nombre} {seg:.0f}s | total {time.time() - t0:.0f}s", flush=True)
 
 
-def _trabajo(etapa, cfg, pliegue, pliegue_def, semilla, objetivo, senal=None):
-    return {"etapa": etapa, "cfg": asdict(cfg), "pliegue": pliegue, "pliegue_def": pliegue_def, "semilla": semilla,
-            "objetivo": objetivo, "senal": senal}
+def _trabajo(etapa, nombre, cambios, pliegue, pliegue_def, semilla, objetivo, plantada=None):
+    cfg = PE.Config(**{**RECETA, **cambios})
+    return {"etapa": etapa, "nombre": nombre, "cfg": asdict(cfg), "pliegue": pliegue, "pliegue_def": pliegue_def,
+            "semilla": semilla, "objetivo": objetivo, "senal": plantada}
 
 
-def trabajos_sintetico(a):
-    out = []
-    for tipo in SENALES:
-        for beta in (0.03, 0.06):
-            for est in PM.ESTRUCTURAS:
-                for s in range(a.semillas):
-                    cfg = PE.Config(estructura=est, espejo=False)
-                    out.append(_trabajo("sintetico", cfg, "S", PLIEGUE_SINT["S"], s, a.objetivo, (tipo, beta)))
-    return out
-
-
-def trabajos_estructuras(a):
-    return [_trabajo("estructuras", PE.Config(estructura=est), p, d, s, a.objetivo)
-            for est in PM.ESTRUCTURAS for p, d in PLIEGUES.items() for s in range(a.semillas)]
-
-
-VARIANTES = {
-    "base": {},
-    "h=16": {"h": 16}, "h=64": {"h": 64},
-    "dropout=0.1": {"dropout": 0.1}, "dropout=0.5": {"dropout": 0.5},
-    "contexto corto (3 dias)": {"dias_trozo": 3}, "contexto largo (11 dias)": {"dias_trozo": 11},
-    "sin espejo": {"espejo": False},
-    "sin tarea de volatilidad": {"peso_vol": 0.0},
-    "solo el objetivo": {"universo": False},
-    "sin coste al entrenar": {"costo_bps": 0.0},
-    "coste doble al entrenar": {"costo_bps": 16.0},
-    "decaimiento=1e-2": {"decaimiento": 1e-2},
-    "lr=3e-4": {"lr": 3e-4, "epocas": 50},
-}
-
-
-def trabajos_mejoras(a):
-    base = PE.Config(estructura=a.estructura)
-    return [_trabajo("mejoras", replace(base, **cambios), p, d, s, a.objetivo)
-            for cambios in VARIANTES.values() for p, d in PLIEGUES.items() for s in range(a.semillas)]
+def trabajos(a):
+    if a.etapa == "plantadas":
+        return [_trabajo("plantadas", est, {"estructura": est}, "P", PLIEGUE_PLANT, s, a.objetivo, (tipo, beta))
+                for tipo, beta in SENALES.items() for est in a.estructuras for s in range(a.semillas)]
+    if a.etapa == "mejoras":
+        return [_trabajo("mejoras", nombre, {"estructura": a.referencia, **cambios}, "P", PLIEGUE_PLANT, s, a.objetivo,
+                         (tipo, beta))
+                for tipo, beta in SENALES.items() for nombre, cambios in VARIANTES.items() for s in range(a.semillas)]
+    return [_trabajo("reales", est, {"estructura": est}, p, d, s, a.objetivo)
+            for est in a.estructuras for p, d in PLIEGUES.items() for s in range(a.semillas)]
 
 
 # ------------------------------------------------------------------ analisis
 def _cargar(a, etapa):
+    return [pickle.load(open(f, "rb")) for f in sorted(Path(a.salida).glob(f"{etapa}_*.pkl"))]
+
+
+def _tabla_plantadas(T0, corridas, objetivo):
+    obj = T0["simbolos"].index(objetivo)
+    techos = {}
+    for c in corridas:
+        tipo, beta = c["trabajo"]["senal"]
+        if tipo not in techos:
+            f = c["filas"]
+            m = T0["sym"][f] == obj
+            g = np.sign(senal(T0, tipo))
+            techos[tipo] = (sharpe_esperado(T0, tipo, beta, g[f], f), sharpe_esperado(T0, tipo, beta, g[f[m]], f[m]))
     filas = []
-    for f in sorted(Path(a.salida).glob(f"{etapa}_*.pkl")):
-        filas.append(pickle.load(open(f, "rb")))
-    return filas
+    for nombre in dict.fromkeys(c["trabajo"]["nombre"] for c in corridas):
+        fila = {"config": nombre}
+        for tipo, beta in SENALES.items():
+            sel = [c for c in corridas if c["trabajo"]["nombre"] == nombre and c["trabajo"]["senal"][0] == tipo]
+            if not sel:
+                continue
+            f = sel[0]["filas"]
+            m = T0["sym"][f] == obj
+            conj = np.mean([c["P"] for c in sel], axis=0)
+            fila[tipo] = np.mean([100 * sharpe_esperado(T0, tipo, beta, c["P"], f) / techos[tipo][0] for c in sel])
+            fila[f"{tipo}_conjunto"] = 100 * sharpe_esperado(T0, tipo, beta, conj, f) / techos[tipo][0]
+            fila[f"{tipo}_objetivo"] = 100 * sharpe_esperado(T0, tipo, beta, conj[m], f[m]) / techos[tipo][1]
+            fila["segundos"] = np.mean([c["segundos"] for c in sel])
+            fila["parametros"] = sel[0]["parametros"]
+        filas.append(fila)
+    return pd.DataFrame(filas).set_index("config"), techos
 
 
-def _evaluar(T, conj, corridas, costo=8.0, objetivo=None):
-    """Conjunto de semillas de una misma configuracion y pliegue -> metricas del promedio de posiciones."""
-    filas = corridas[0]["filas"]
-    es_val = corridas[0]["es_val"]
-    P = np.full((len(T["sym"]), PD.J), np.nan, np.float32)
-    P[filas] = np.mean([c["P"] for c in corridas], axis=0)
-    val, pru = np.zeros(len(P), bool), np.zeros(len(P), bool)
+def _suave(conj, c):
+    P = np.full((conj.n, PD.J), np.nan, np.float32)
+    P[c["filas"]] = c["P"]
+    pru = np.zeros(conj.n, bool)
+    pru[c["filas"][~c["es_val"]]] = True
+    i, g = PE.ganancia_suave(conj, P, pru, 0.0)
+    return PE.sharpe_cartera(g, conj.fecha[i])
+
+
+def _eval_real(T, conj, sel, objetivo, costo=8.0):
+    """Conjunto de semillas (mismo pliegue): metricas en el anio de prueba."""
+    filas, es_val = sel[0]["filas"], sel[0]["es_val"]
+    P = np.full((conj.n, PD.J), np.nan, np.float32)
+    P[filas] = np.mean([c["P"] for c in sel], axis=0)
+    val, pru = np.zeros(conj.n, bool), np.zeros(conj.n, bool)
     val[filas[es_val]], pru[filas[~es_val]] = True, True
+    obj = T["simbolos"].index(objetivo)
     r = {}
-    i, g = PE.ganancia_suave(conj, P, pru, costo)
-    r["sharpe_suave"] = PE.sharpe_cartera(g, conj.fecha[i])
-    i0, g0 = PE.ganancia_suave(conj, P, pru, 0.0)
-    r["sharpe_suave_bruto"] = PE.sharpe_cartera(g0, conj.fecha[i0])
-    obj = T["simbolos"].index(objetivo) if objetivo is not None else None
+    i, g = PE.ganancia_suave(conj, P, pru, 0.0)
+    r["cartera_bruto"] = PE.sharpe_cartera(g, conj.fecha[i])
+    r["cartera_bruto_semilla"] = float(np.mean([_suave(conj, c) for c in sel]))
     u, q = PE.elegir_umbral(conj, P, val, costo, obj)
     D = PE.discretizar(P, u, q)
     ip = np.flatnonzero(pru)
-    neto, n_ops, rot = PE.ganancia_dura(T["RB"][ip], D[ip], costo)
     r["umbral"] = u
-    r["sharpe_duro"] = PE.sharpe_cartera(PE.ganancia_dura_norm(conj, D[ip], ip, costo), conj.fecha[ip])
-    r["ops_dia"] = float(n_ops.mean())
-    r["bps_dia"] = float(neto.mean())
-    if objetivo is not None:
-        m = T["sym"][ip] == T["simbolos"].index(objetivo)
-        if m.sum() > 20 and neto[m].std() > 0:
-            r["obj_sharpe"] = float(neto[m].mean() / neto[m].std() * np.sqrt(252))
-            r["obj_bps_dia"], r["obj_ops_dia"] = float(neto[m].mean()), float(n_ops[m].mean())
-            bruto = neto[m] + 4.0 * rot[m]
-            r["obj_bps_op_bruto"] = float(bruto.sum() / max(n_ops[m].sum(), 1))
-    # tarea auxiliar: cuanto explica el pronostico de volatilidad (R2 frente a la media por tramo)
-    V = np.mean([c["V"] for c in corridas], axis=0)[~es_val]
+    r["cartera_neto"] = PE.sharpe_cartera(PE.ganancia_dura_norm(conj, D[ip], ip, costo), conj.fecha[ip])
+    for nombre, lista in (("objetivo", [objetivo]), ("apalancados", ["TQQQ", "SPXL", "UPRO"])):
+        ks = [T["simbolos"].index(s) for s in lista if s in T["simbolos"]]
+        m = ip[np.isin(T["sym"][ip], ks)]
+        if not len(m):
+            continue
+        neto, n_ops, rot = PE.ganancia_dura(T["RB"][m], D[m], costo)
+        bruto = neto + (costo / 2) * rot
+        r[f"{nombre}_sharpe_neto"] = PE.sharpe_cartera(neto, conj.fecha[m])
+        r[f"{nombre}_bps_op_bruto"] = float(bruto.sum() / max(n_ops.sum(), 1))
+        r[f"{nombre}_ops_dia"] = float(n_ops.mean())
+    V = np.mean([c["V"] for c in sel], axis=0)[~es_val]
     vt = T["VT"][ip]
     r["r2_vol"] = float(1 - ((vt - V) ** 2).mean() / ((vt - vt.mean(0)) ** 2).mean())
-    r["sharpe_val"] = float(np.mean([c["hist"]["mejor_sharpe_val"] for c in corridas]))
-    r["epocas"] = float(np.mean([c["hist"]["epocas"] for c in corridas]))
-    r["segundos"] = float(np.mean([c["segundos"] for c in corridas]))
-    r["semillas"] = len(corridas)
-    r["sharpe_semillas_sd"] = float(np.nanstd([_solo_suave(T, conj, c, costo) for c in corridas]))
+    r["segundos"] = float(np.mean([c["segundos"] for c in sel]))
     return r
-
-
-def _solo_suave(T, conj, c, costo):
-    P = np.full((len(T["sym"]), PD.J), np.nan, np.float32)
-    P[c["filas"]] = c["P"]
-    pru = np.zeros(len(P), bool)
-    pru[c["filas"][~c["es_val"]]] = True
-    i, g = PE.ganancia_suave(conj, P, pru, costo)
-    return PE.sharpe_cartera(g, conj.fecha[i])
 
 
 def analizar(a):
     T0 = _tabla(a.tabla)
     pd.set_option("display.width", 250)
     out = Path(a.salida)
-    # ---- sintetico
-    cs = _cargar(a, "sintetico")
-    if cs:
-        filas = []
-        for (tipo, beta) in sorted({tuple(c["trabajo"]["senal"]) for c in cs}):
-            T = plantar(T0, tipo, beta)
-            conj = PE.Conjunto(T)
-            pru = np.isin(conj.anio, PLIEGUE_SINT["S"][1])
-            Po = np.where(pru[:, None], np.sign(T["_g"]), np.nan).astype(np.float32)
-            i, g = PE.ganancia_suave(conj, Po, pru, 8.0)
-            techo = PE.sharpe_cartera(g, conj.fecha[i])
-            for est in PM.ESTRUCTURAS:
-                sel = [c for c in cs if tuple(c["trabajo"]["senal"]) == (tipo, beta) and c["trabajo"]["cfg"]["estructura"] == est]
-                if not sel:
-                    continue
-                r = _evaluar(T, conj, sel)
-                filas.append({"senal": tipo, "beta": beta, "estructura": est, "techo": techo, **r})
-        df = pd.DataFrame(filas)
-        df["recuperado_pct"] = 100 * df["sharpe_suave"] / df["techo"]
-        df.to_csv(out / "tabla_sintetico.csv", index=False)
-        print("\n=== SENALES PLANTADAS: % del Sharpe del techo que recupera cada estructura (neto de 8 bps) ===")
-        print(df.pivot_table(index="estructura", columns=["senal", "beta"], values="recuperado_pct").round(0)
-              .reindex(PM.ESTRUCTURAS).to_string())
-        print("Techo (Sharpe de quien conoce la regla):")
-        print(df.groupby(["senal", "beta"])["techo"].first().round(2).to_string())
-    # ---- datos reales
-    conj = PE.Conjunto(T0)
-    for etapa, clave in (("estructuras", lambda c: c["trabajo"]["cfg"]["estructura"]),
-                         ("mejoras", lambda c: PE.Config(**c["trabajo"]["cfg"]).clave())):
+    for etapa, titulo in (("plantadas", "ESTRUCTURAS con senales plantadas"), ("mejoras", "INGREDIENTES (red de referencia)")):
         cs = _cargar(a, etapa)
         if not cs:
             continue
+        df, techos = _tabla_plantadas(T0, cs, a.objetivo)
+        df.to_csv(out / f"tabla_{etapa}.csv")
+        print(f"\n=== {titulo}: % del Sharpe del techo recuperado en 2019 (media de semillas | conjunto | solo objetivo) ===")
+        print(df.round(0).to_string())
+        print("Techo (Sharpe bruto esperado de quien conoce la regla; cartera, objetivo):",
+              {k: (round(v[0], 2), round(v[1], 2)) for k, v in techos.items()})
+    cs = _cargar(a, "reales")
+    if cs:
+        conj = PE.Conjunto(T0)
         filas = []
-        for k in sorted({clave(c) for c in cs}):
-            for p in PLIEGUES:
-                sel = [c for c in cs if clave(c) == k and c["trabajo"]["pliegue"] == p]
-                if sel:
-                    filas.append({"config": k, "pliegue": p, **_evaluar(T0, conj, sel, objetivo=a.objetivo)})
+        for est in dict.fromkeys(c["trabajo"]["nombre"] for c in cs):
+            for p, (hasta, anios) in PLIEGUES.items():
+                sel = [c for c in cs if c["trabajo"]["nombre"] == est and c["trabajo"]["pliegue"] == p]
+                if not sel:
+                    continue
+                cfg = PE.Config(**sel[0]["trabajo"]["cfg"])
+                ent, _, _ = _mascaras(conj, hasta, anios, cfg.frac_validacion)
+                conj.fijar_costo(a.objetivo, ent, cfg.costo_comun)
+                filas.append({"estructura": est, "prueba": anios[0], "semillas": len(sel), **_eval_real(T0, conj, sel, a.objetivo)})
         df = pd.DataFrame(filas)
-        df.to_csv(out / f"tabla_{etapa}_por_pliegue.csv", index=False)
-        cols = ["sharpe_suave", "sharpe_suave_bruto", "sharpe_duro", "obj_sharpe", "obj_bps_dia", "obj_ops_dia",
-                "obj_bps_op_bruto", "ops_dia", "r2_vol", "sharpe_val", "sharpe_semillas_sd", "epocas", "segundos"]
-        m = df.groupby("config")[cols].mean().sort_values("sharpe_suave", ascending=False)
-        m.to_csv(out / f"tabla_{etapa}.csv")
-        print(f"\n=== {etapa.upper()} con datos reales 2016-2019 (media de los pliegues 2018 y 2019; neto de 8 bps) ===")
+        df.to_csv(out / "tabla_reales_por_anio.csv", index=False)
+        m = df.drop(columns=["prueba", "semillas", "umbral"]).groupby("estructura").mean()
+        m = m.reindex([e for e in PM.ESTRUCTURAS if e in m.index])
+        m.to_csv(out / "tabla_reales.csv")
+        print("\n=== DATOS REALES 2016-2019: Sharpe anualizado en el anio de prueba (media de 2018 y 2019) ===")
         print(m.round(2).to_string())
-        print("Por pliegue (Sharpe suave de cartera):")
-        print(df.pivot(index="config", columns="pliegue", values="sharpe_suave").round(2).to_string())
+        print("\nPor anio de prueba:")
+        cols = ["cartera_bruto", "cartera_neto", "objetivo_sharpe_neto", "objetivo_bps_op_bruto", "objetivo_ops_dia", "umbral"]
+        print(df.pivot(index="estructura", columns="prueba", values=cols).round(2).reindex(m.index).to_string())
 
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("etapa", choices=["sintetico", "estructuras", "mejoras", "analizar"])
+    p.add_argument("etapa", choices=["plantadas", "mejoras", "reales", "analizar"])
     p.add_argument("--tabla", required=True)
     p.add_argument("--salida", required=True)
     p.add_argument("--trabajadores", type=int, default=4)
     p.add_argument("--semillas", type=int, default=3)
     p.add_argument("--objetivo", default="SMH3X")
-    p.add_argument("--estructura", default="vlstm")
+    p.add_argument("--referencia", default="lstm")
+    p.add_argument("--estructuras", nargs="+", default=list(PM.ESTRUCTURAS))
     a = p.parse_args()
     if a.etapa == "analizar":
         return analizar(a)
-    trabajos = {"sintetico": trabajos_sintetico, "estructuras": trabajos_estructuras, "mejoras": trabajos_mejoras}[a.etapa](a)
-    print(f"{len(trabajos)} ejecuciones", flush=True)
-    _lanzar(trabajos, a)
+    lista = trabajos(a)
+    print(f"{len(lista)} ejecuciones", flush=True)
+    _lanzar(lista, a)
 
 
 if __name__ == "__main__":

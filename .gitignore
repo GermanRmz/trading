@@ -8,3 +8,8 @@ ia/resultados/exp3_trades_*.csv
 
 # noticias descargadas (se regeneran con ia/descargar_noticias_alpaca.py)
 lab/datos_noticias_alpaca/_parts/
+
+# adv_trading: datos descargados y caches locales (se regeneran)
+adv_trading/datos_soxl_sip/
+adv_trading/datos_soxl_sip_limpio/
+adv_trading/resultados/_*.pkl
