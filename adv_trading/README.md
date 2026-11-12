@@ -168,6 +168,16 @@ señal sin costes sobre los 24 símbolos; las otras columnas son el sustituto de
 Con dos años de prueba, el error típico de cada Sharpe es de alrededor de 0,7 a 1: ninguna de las redes
 pequeñas se distingue de cero después de costes. Lo único claro es que las tres con VSN pierden.
 
+**El procedimiento final completo** (`red_politica.py explorar` sobre el sustituto de SOXL):
+
+| Año | Operaciones | Por día | Bruto por operación | Neto a 8 bps | Acierto | Sharpe neto |
+|---|---|---|---|---|---|---|
+| 2018 | 174 | 0,72 | +7,9 bps | −0,2 bps | 43 % | −0,01 |
+| 2019 | 220 | 0,94 | +14,6 bps | +6,6 bps | 49 % | 0,59 |
+
+La señal bruta es positiva los dos años, pero después de costes no se distingue de cero. Otra tanda de
+semillas del mismo conjunto dio 0,63 y 1,11: esa diferencia es el tamaño del ruido.
+
 
 ## 4. Configuración final (`config_final.json`)
 
