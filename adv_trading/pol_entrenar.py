@@ -291,25 +291,22 @@ def ganancia_dura_norm(conj, D, filas, costo_bps):
     return (D * y).sum(1) - lado * rot
 
 
-UMBRALES = (0.0, 0.5, 1.0, 1.5)
+UMBRALES = (1.0, 0.5, 0.0)
 
 
-def elegir_umbral(conj, P, valid, costo_bps, obj=None, min_ops_dia=0.5):
-    """Umbral (multiplo del tamano tipico de la senal) con mejor Sharpe neto de cartera en la validacion.
+def elegir_umbral(conj, P, valid, obj, min_ops_dia=0.55, umbrales=UMBRALES):
+    """Umbral de operacion, como multiplo del tamano tipico de la senal.
 
-    Si se da `obj` (indice del simbolo objetivo), se exige que alli haya al menos `min_ops_dia`
-    operaciones por sesion: el laboratorio pide un minimo de operaciones para poder juzgar.
+    Regla fija, sin optimizar nada: el mas exigente de la lista (operar solo cuando la senal supera su
+    tamano tipico) que deje en la validacion al menos `min_ops_dia` operaciones por sesion en el
+    objetivo. El laboratorio pide un minimo de operaciones para poder juzgar una estrategia; elegir el
+    umbral por su resultado en unas pocas semanas de validacion seria ajustar al ruido.
     """
     filas = np.flatnonzero(valid & np.isfinite(P[:, 0]))
     q = escala(P[filas])
-    mejor, mejor_u = -np.inf, UMBRALES[0]
-    for u in UMBRALES:
-        D = discretizar(P[filas], u, q)
-        if obj is not None:
-            m = conj.sym[filas] == obj
-            if m.any() and ganancia_dura(conj.t["RB"][filas][m], D[m], 0.0)[1].mean() < min_ops_dia:
-                continue
-        s = sharpe_cartera(ganancia_dura_norm(conj, D, filas, costo_bps), conj.fecha[filas])
-        if np.isfinite(s) and s > mejor:
-            mejor, mejor_u = s, u
-    return mejor_u, q
+    m = conj.sym[filas] == obj
+    for u in umbrales:
+        D = discretizar(P[filas][m], u, q)
+        if ganancia_dura(conj.t["RB"][filas][m], D, 0.0)[1].mean() >= min_ops_dia:
+            return u, q
+    return umbrales[-1], q

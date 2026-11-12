@@ -5,6 +5,7 @@ Antes hay que preparar los datos:   python adv_trading/preparar_datos_soxl.py
 
 Uso (desde la raiz del repositorio):
     python adv_trading/red_politica.py prueba      # comprueba la tuberia; NO registra ni mira resultados reales
+    python adv_trading/red_politica.py explorar    # resultado en 2018 y 2019 (fuera de DEV): gratis, no registra
     python adv_trading/red_politica.py ejecutar    # registra H11 y la evalua en DEV (una sola vez)
 
 DEFINICIONES FIJAS (no se cambian tras ver resultados; cualquier cambio = otra hipotesis):
@@ -17,13 +18,15 @@ DEFINICIONES FIJAS (no se cambian tras ver resultados; cualquier cambio = otra h
   Datos       dataset congelado adv_trading/datos_soxl_sip_limpio (velas SIP de 5 min desde 2016).
               2016-2019 solo entrena. DEV = 2020-2023, evaluado con ventana expansiva: cada anio se opera
               con redes entrenadas unicamente con anios anteriores.
-  Red         la de adv_trading/config_final.json (estructura, tamano y regularizacion elegidos con datos
-              anteriores a 2020 y con senales plantadas; ver README). Se entrena la SENAL sin costes,
-              maximizando el Sharpe, con simetria exacta (no puede aprender un sesgo fijo de compra).
-  Conjunto    promedio de las posiciones de varias semillas.
-  Costes      se aplican al convertir la senal en operaciones: solo se opera cuando la senal supera un
-              umbral (multiplo de su tamano tipico) elegido en la validacion interna de cada pliegue,
-              neto de 8 bps. Evaluacion del laboratorio a 4, 8 y 12 bps; el criterio es a 8.
+  Red         la de adv_trading/config_final.json: conjunto de tres redes pequenas (LSTM, xLSTM y
+              Transformer, 8 neuronas), elegido con datos anteriores a 2020 y con senales plantadas (ver
+              README). Se entrena la SENAL sin costes, maximizando el Sharpe, con simetria exacta (no
+              puede aprender un sesgo fijo de compra).
+  Conjunto    cada estructura aporta el promedio de sus semillas; se igualan las escalas y se promedian.
+  Costes      se aplican al convertir la senal en operaciones: solo se opera cuando la senal supera su
+              tamano tipico (umbral 1,0); si asi hubiera menos de 0,55 operaciones por sesion en la
+              validacion interna del pliegue, se baja a 0,5 y luego a 0. Regla fija, sin optimizar.
+              Evaluacion del laboratorio a 4, 8 y 12 bps; el criterio es a 8.
   Umbral t    Bonferroni sobre TODAS las hipotesis: las del registro de lab/ mas las de este registro.
 """
 import hashlib
@@ -31,7 +34,6 @@ import json
 import pickle
 import sys
 import time
-from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -49,6 +51,7 @@ import preparar_datos_soxl as PREP  # noqa: E402
 M = PD.M
 PROTOCOLO, FAMILIA, NOMBRE = "pol_v1", "ia_red_politica", "H11_politica_soxl"
 ANIOS_DEV = ("2020", "2021", "2022", "2023")
+ANIOS_PRE = ("2018", "2019")          # fuera de DEV/VAL/SELLADO: se pueden mirar sin gastar hipotesis
 CONFIG = AQUI / "config_final.json"
 SALIDA = AQUI / "resultados"
 REGISTRO = AQUI / "registro" / "registro_hipotesis.jsonl"
@@ -70,8 +73,10 @@ class RegistroGlobal(M.Registro):
 
 
 def leer_config():
+    """Devuelve (lista de (Config, semillas) -una por estructura del conjunto-, reglas de operacion)."""
     c = json.loads(CONFIG.read_text(encoding="utf-8"))
-    return PE.Config(**c["red"]), c["conjunto"]
+    redes = [(PE.Config(**{**c["receta"], "estructura": r["estructura"]}), int(r["semillas"])) for r in c["redes"]]
+    return redes, c["operacion"]
 
 
 def _sha_codigo():
@@ -103,15 +108,18 @@ def tabla(ds):
     return T
 
 
-def decidir(T, cfg, conjunto, anios, verbose=True):
+def decidir(T, redes, operacion, anios, verbose=True):
     """Ventana expansiva: para cada anio, entrena el conjunto con anios anteriores y decide el anio.
 
-    Devuelve D [n, 12] con +1/0/-1 (NaN fuera de los anios pedidos) y un diario por pliegue.
+    El conjunto promedia varias estructuras pequenas; cada una aporta el promedio de sus semillas,
+    llevado antes a la misma escala. Devuelve D [n, 12] con +1/0/-1 (NaN fuera de los anios pedidos)
+    y un diario por pliegue.
     """
-    import torch
-    conj = PE.Conjunto(T, "cuda" if torch.cuda.is_available() else "cpu")
+    # Redes de unos mil parametros: en CPU tardan poco y se evita depender de la tarjeta grafica.
+    conj = PE.Conjunto(T, "cpu")
+    cfg0 = redes[0][0]
     if verbose:
-        print(f"Dispositivo: {conj.dev} | red: {cfg.estructura} h={cfg.h} | semillas: {conjunto['semillas']}", flush=True)
+        print("Conjunto: " + " + ".join(f"{c.estructura} x{n}" for c, n in redes) + f" (h={cfg0.h}) | CPU", flush=True)
     obj = T["simbolos"].index(PREP.OBJETIVO)
     D = np.full((conj.n, PD.J), np.nan, np.float32)
     diario = []
@@ -119,17 +127,22 @@ def decidir(T, cfg, conjunto, anios, verbose=True):
         t0 = time.time()
         antes = conj.anio < anio
         fechas = np.unique(conj.fecha[antes])
-        corte = fechas[int((1 - cfg.frac_validacion) * len(fechas))]
+        corte = fechas[int((1 - cfg0.frac_validacion) * len(fechas))]
         ent, val, pru = antes & (conj.fecha < corte), antes & (conj.fecha >= corte), conj.anio == anio
-        conj.escalar(ent, cfg.recorte_x)
-        conj.fijar_costo(PREP.OBJETIVO, ent, cfg.costo_comun)
+        conj.escalar(ent, cfg0.recorte_x)
+        conj.fijar_costo(PREP.OBJETIVO, ent, cfg0.costo_comun)
         P = np.zeros((conj.n, PD.J), np.float32)
-        for s in range(conjunto["semillas"]):
-            red, _ = PE.entrenar(cfg, conj, ent, val, 1000 * int(anio) + s, objetivo=PREP.OBJETIVO)
-            p, _ = PE.predecir(red, conj, val | pru, cfg)
-            P += np.nan_to_num(p) / conjunto["semillas"]
+        for k, (cfg, n_sem) in enumerate(redes):
+            Pe = np.zeros((conj.n, PD.J), np.float32)
+            for s in range(n_sem):
+                red, _ = PE.entrenar(cfg, conj, ent, val, 1000 * int(anio) + 100 * k + s, objetivo=PREP.OBJETIVO)
+                p, _ = PE.predecir(red, conj, val | pru, cfg)
+                Pe += np.nan_to_num(p) / n_sem
+            P += Pe / max(PE.escala(Pe[val]), 1e-12) / len(redes)       # misma escala antes de promediar
+            if verbose:
+                print(f"    {anio} {cfg.estructura}: {n_sem} semillas, {time.time() - t0:.0f} s acumulados", flush=True)
         P[~(val | pru)] = np.nan
-        u, q = PE.elegir_umbral(conj, P, val, conjunto["costo_bps"], obj, conjunto["min_ops_dia"])
+        u, q = PE.elegir_umbral(conj, P, val, obj, operacion["min_ops_dia"], tuple(operacion["umbrales"]))
         D[pru] = PE.discretizar(P[pru], u, q)
         m = pru & (conj.sym == obj)
         diario.append({"anio": anio, "entrena_hasta": corte, "sesiones_entren": int(ent.sum()), "umbral": u,
@@ -164,15 +177,31 @@ def operaciones(T, D):
     return pd.DataFrame(filas, columns=cols)
 
 
+def resumen_libre(ops, sesiones_por_anio, costo=8.0):
+    """Tabla por anio para la exploracion (no usa el marco: son anios fuera de DEV)."""
+    filas = []
+    for anio, n_ses in sesiones_por_anio.items():
+        o = ops[ops["date"].str[:4] == anio]
+        diario = (o["ret_bps"] - costo).groupby(o["date"]).sum()
+        d = np.r_[diario.values, np.zeros(max(n_ses - len(diario), 0))]          # dias sin operar = 0
+        filas.append({"anio": anio, "operaciones": len(o), "ops_por_dia": len(o) / max(n_ses, 1),
+                      "bruto_bps_por_op": o["ret_bps"].mean() if len(o) else np.nan,
+                      "neto_8_bps_por_op": (o["ret_bps"] - costo).mean() if len(o) else np.nan,
+                      "acierto_pct": 100 * (o["ret_bps"] > 0).mean() if len(o) else np.nan,
+                      "sharpe_neto": d.mean() / d.std() * np.sqrt(252) if d.std() > 0 else np.nan,
+                      "t_neto": d.mean() / (d.std() / np.sqrt(len(d))) if d.std() > 0 else np.nan})
+    return pd.DataFrame(filas)
+
+
 def main():
     modo = sys.argv[1] if len(sys.argv) > 1 else ""
-    if modo not in ("prueba", "ejecutar"):
+    if modo not in ("prueba", "explorar", "ejecutar"):
         raise SystemExit(__doc__)
     try:
         import torch  # noqa: F401
     except ImportError:
         raise SystemExit("Falta PyTorch (ver adv_trading/README.md).")
-    cfg, conjunto = leer_config()
+    redes, operacion = leer_config()
     ds = abrir()
     T = tabla(ds)
     n_obj = int((T["sym"] == T["simbolos"].index(PREP.OBJETIVO)).sum())
@@ -182,25 +211,40 @@ def main():
         # Dos mundos sinteticos (no se mira ningun retorno real de DEV):
         #   nulo     -> el resultado bruto debe ser compatible con 0
         #   plantado -> con una senal fuerte conocida, el resultado bruto debe salir claramente positivo
-        rapido = dict(conjunto, semillas=3)
+        rapido = [(c, 2) for c, _ in redes]
         for nombre, S in (("mundo nulo (debe dar ~0)", PS.plantar(T)),
                           ("senal plantada fuerte (debe dar positivo)", PS.plantar(T, "momento", PS.SENALES["momento"]))):
-            D, _ = decidir(S, cfg, rapido, ANIOS_DEV[-2:], verbose=False)
+            D, _ = decidir(S, rapido, operacion, ANIOS_DEV[-2:], verbose=False)
             ops = operaciones(S, D)
             t = ops["ret_bps"].mean() / (ops["ret_bps"].std() / np.sqrt(max(len(ops), 2))) if len(ops) > 2 else float("nan")
             print(f"PRUEBA {nombre}: {len(ops)} operaciones en {ANIOS_DEV[-2]}-{ANIOS_DEV[-1]}, "
                   f"media bruta {ops['ret_bps'].mean():.2f} bps por operacion, t = {t:.2f}", flush=True)
         print("La tuberia funciona de principio a fin. No se ha registrado nada.")
         return
+    if modo == "explorar":
+        # Mismo procedimiento que `ejecutar`, pero sobre 2018 y 2019: anios anteriores a DEV que se pueden
+        # mirar libremente. Sirve para decidir si merece la pena gastar la hipotesis en DEV.
+        D, _ = decidir(T, redes, operacion, ANIOS_PRE)
+        ops = operaciones(T, D)
+        obj = T["simbolos"].index(PREP.OBJETIVO)
+        n_ses = {a: int(((T["sym"] == obj) & (np.char.startswith(T["fecha"].astype(str), a))).sum()) for a in ANIOS_PRE}
+        tab = resumen_libre(ops, n_ses)
+        SALIDA.mkdir(exist_ok=True)
+        tab.to_csv(SALIDA / "pol_exploracion_2018_2019.csv", index=False)
+        print(f"\nEXPLORACION en {PREP.OBJETIVO}, {ANIOS_PRE[0]} y {ANIOS_PRE[1]} (fuera de DEV; no se registra nada):")
+        print(tab.round(2).to_string(index=False))
+        print("Orientacion: con dos anios, un Sharpe neto por debajo de ~1,4 no se distingue del azar.")
+        return
     reg = RegistroGlobal(ds.dataset_id, path=REGISTRO, manual_path=PREP.EXCLUSIONES)
     ds.attach(reg)
-    hid = reg.registrar(FAMILIA, NOMBRE, {"protocolo": PROTOCOLO, "objetivo": PREP.OBJETIVO, "red": asdict(cfg),
-                                          "conjunto": conjunto, "hipotesis_previas_lab": reg.n_previas()},
+    hid = reg.registrar(FAMILIA, NOMBRE, {"protocolo": PROTOCOLO, "objetivo": PREP.OBJETIVO,
+                                          "config": json.loads(CONFIG.read_text(encoding="utf-8")),
+                                          "hipotesis_previas_lab": reg.n_previas()},
                         f"Red de politica {PROTOCOLO}; codigo sha256 {_sha_codigo()}")
     if reg.estado(hid)["dev_evaluada"]:
         raise SystemExit(f"{NOMBRE} ({hid}) ya se evaluo en DEV. No se repite.")
     SALIDA.mkdir(exist_ok=True)
-    D, diario = decidir(T, cfg, conjunto, ANIOS_DEV)
+    D, diario = decidir(T, redes, operacion, ANIOS_DEV)
     ops = operaciones(T, D)
     ops.to_csv(SALIDA / "pol_operaciones_dev.csv", index=False)           # se guarda antes de evaluar
     pd.DataFrame(diario).to_csv(SALIDA / "pol_pliegues_dev.csv", index=False)

@@ -37,12 +37,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import pol_datos as PD  # noqa: E402
 import pol_entrenar as PE  # noqa: E402
 import pol_modelos as PM  # noqa: E402
+from pol_sintetico import SENALES, plantar, senal, sharpe_esperado  # noqa: E402
 
 # Receta comun, calibrada con senales plantadas: la senal se entrena SIN costes, con simetria exacta,
 # apagado de variables, redes pequenas, mucha regularizacion y pocas epocas fijas.
 RECETA = dict(h=8, dropout=0.5, decaimiento=1e-2, lr=1e-3, lote=256, epocas=15, paciencia=0, costo_bps=0.0,
               espejo=False, antisimetrica=True, dropout_var=0.3, recorte_x=3.0, recorte_y=4.0)
-SENALES = {"momento": 0.06, "regimen": 0.12, "memoria": 0.12}
 PLIEGUE_PLANT = ("2018-12-31", ("2019",))
 PLIEGUES = {"A": ("2017-12-31", ("2018",)), "B": ("2018-12-31", ("2019",))}
 VARIANTES = {
@@ -68,50 +68,6 @@ def _tabla(ruta):
     if _T is None:
         _T = pickle.load(open(ruta, "rb"))
     return _T
-
-
-def senal(T, tipo):
-    """Regla conocida g (por muestra y tramo) que se planta en el retorno."""
-    v = T["variables"].index
-    X = T["X"]
-    if tipo == "momento":            # el movimiento del dia continua (relacion suave, visible en una variable)
-        return np.tanh(X[:, :, v("r_dia")])
-    if tipo == "regimen":            # continua solo por la tarde y en dias de volatilidad alta (interaccion)
-        return (np.sign(X[:, :, v("r_cc")]) * (X[:, :, v("rv_rel")] > 0) * (X[:, :, v("paso")] >= 0.6)).astype(np.float32)
-    if tipo == "memoria":            # lo ocurrido hasta las 10:00 marca la ultima hora (hay que recordarlo)
-        g = np.zeros(X.shape[:2], np.float32)
-        g[:, -2:] = np.tanh(X[:, :1, v("r_cc")])
-        return g
-    raise ValueError(tipo)
-
-
-def plantar(T, tipo, beta, semilla=123):
-    """Copia de la tabla con retornos sinteticos: mundo nulo realista + beta x senal conocida.
-
-    Mundo nulo: el retorno real con signo al azar por (fecha, tramo), comun a todos los simbolos. Conserva
-    volatilidad, horario y correlacion entre simbolos, pero rompe toda relacion con el pasado.
-    """
-    rng = np.random.default_rng(semilla)
-    _, inv = np.unique(T["fecha"], return_inverse=True)
-    signo = rng.choice([-1.0, 1.0], size=(inv.max() + 1, PD.J)).astype(np.float32)[inv]
-    g = senal(T, tipo)
-    S = dict(T)
-    S["Y"] = np.clip(T["Y"] * signo + beta * T["Y"].std(axis=0, keepdims=True) * g, -5, 5).astype(np.float32)
-    S["RB"] = (1e4 * S["Y"] * T["sig"][:, None]).astype(np.float32)
-    return S
-
-
-def sharpe_esperado(T, tipo, beta, P, filas, sorteos=30, semilla=7):
-    """Sharpe bruto medio de las posiciones P frente a muchos sorteos del mundo nulo (mas la senal)."""
-    rng = np.random.default_rng(semilla)
-    f = T["fecha"][filas]
-    _, inv = np.unique(f, return_inverse=True)
-    yr, plant = T["Y"][filas], beta * T["Y"].std(axis=0, keepdims=True) * senal(T, tipo)[filas]
-    out = []
-    for _ in range(sorteos):
-        sg = rng.choice([-1.0, 1.0], size=(inv.max() + 1, PD.J))[inv]
-        out.append(PE.sharpe_cartera((P * (yr * sg + plant)).sum(1), f))
-    return float(np.mean(out))
 
 
 def _mascaras(conj, hasta, anios, frac):
@@ -238,7 +194,7 @@ def _eval_real(T, conj, sel, objetivo, costo=8.0):
     i, g = PE.ganancia_suave(conj, P, pru, 0.0)
     r["cartera_bruto"] = PE.sharpe_cartera(g, conj.fecha[i])
     r["cartera_bruto_semilla"] = float(np.mean([_suave(conj, c) for c in sel]))
-    u, q = PE.elegir_umbral(conj, P, val, costo, obj)
+    u, q = PE.elegir_umbral(conj, P, val, obj)
     D = PE.discretizar(P, u, q)
     ip = np.flatnonzero(pru)
     r["umbral"] = u
