@@ -1,0 +1,8 @@
+lstm        h=8 dp=0.5 wd=0.01 momento  beta=0.06 lr=0.001 lote=256 techo 2.65 seg   19 | % del techo por epoca: {1: 78, 2: 87, 3: 90, 5: 92, 8: 96, 12: 100, 16: 102, 20: 101, 25: 100, 30: 97, 40: 86}
+lstm        h=16 dp=0.5 wd=0.01 regimen  beta=0.12 lr=0.0003 lote=256 techo 3.25 seg   27 | % del techo por epoca: {1: 21, 2: 24, 3: 24, 5: 23, 8: 21, 12: 22, 16: 20, 20: 21, 25: 16, 30: 15, 40: 10}
+mlp         h=32 dp=0.3 wd=0.0001 regimen  beta=0.12 lr=0.001 lote=256 techo 3.25 seg   34 | % del techo por epoca: {1: 32, 2: 32, 3: 29, 5: 27, 8: 30, 12: 27, 16: 25, 20: 27, 25: 23, 30: 26, 40: 23}
+mlp         h=32 dp=0.3 wd=0.0001 memoria  beta=0.12 lr=0.001 lote=256 techo 2.37 seg   36 | % del techo por epoca: {1: 17, 2: 16, 3: 8, 5: 4, 8: 10, 12: 1, 16: 2, 20: 10, 25: -4, 30: 0, 40: -4}
+vlstm       h=32 dp=0.3 wd=0.0001 regimen  beta=0.12 lr=0.001 lote=256 techo 3.25 seg  670 | % del techo por epoca: {1: 22, 2: 24, 3: 24, 5: 16, 8: 6, 12: 4, 16: 3, 20: 5, 25: 6, 30: 7}
+vlstm       h=32 dp=0.3 wd=0.0001 momento  beta=0.06 lr=0.001 lote=256 techo 2.65 seg  678 | % del techo por epoca: {1: 75, 2: 73, 3: 55, 5: 50, 8: 39, 12: 34, 16: 26, 20: 33, 25: 21, 30: 29}
+vlstm       h=32 dp=0.3 wd=0.0001 memoria  beta=0.12 lr=0.001 lote=256 techo 2.37 seg  670 | % del techo por epoca: {1: 8, 2: 4, 3: -1, 5: -1, 8: -5, 12: -10, 16: -7, 20: -2, 25: -6, 30: 4}
+tft         h=32 dp=0.3 wd=0.0001 regimen  beta=0.12 lr=0.001 lote=256 techo 3.25 seg  844 | % del techo por epoca: {1: 29, 2: 24, 3: 15, 5: 11, 8: 11, 12: 4, 16: 10, 20: 5, 25: 9, 30: 12}

@@ -1,0 +1,9 @@
+{
+  "receta": {"h": 8, "dropout": 0.5, "decaimiento": 0.01, "lr": 0.001, "lote": 256, "epocas": 15,
+             "paciencia": 0, "costo_bps": 0.0, "espejo": false, "antisimetrica": true,
+             "dropout_var": 0.3, "recorte_x": 3.0, "recorte_y": 4.0, "peso_vol": 0.0},
+  "redes": [{"estructura": "lstm", "semillas": 5},
+            {"estructura": "xlstm", "semillas": 5},
+            {"estructura": "transformer", "semillas": 5}],
+  "operacion": {"umbrales": [1.0, 0.5, 0.0], "min_ops_dia": 0.55}
+}

@@ -1,0 +1,7 @@
+# Estos dos archivos se congelaron con saltos de linea de Windows (CRLF); se fijan asi para que
+# el hash del manifiesto coincida en cualquier sistema.
+lab/datos_lab_sip_limpio/dias_excluidos.csv text eol=crlf
+lab/datos_lab_sip_limpio/integridad_revision.csv text eol=crlf
+lab/exclusiones_manuales.csv text eol=crlf
+# Este archivo entra en el hash del registro de adv_trading: sus bytes no deben cambiar entre sistemas.
+adv_trading/exclusiones_manuales_soxl.csv -text
