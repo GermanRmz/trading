@@ -1,0 +1,66 @@
+{
+  "creado": "2026-11-16T17:19:28",
+  "dataset_id": "766ba14affe1cc0a19e03c8ebd9d11019077bef9d1148ef553008fe192a88db3",
+  "descarga": {
+    "feed": "sip",
+    "adjustment": "all",
+    "timeframe": "1Day",
+    "inicio": "2016-01-01",
+    "fin": "2026-11-15"
+  },
+  "simbolos": [
+    "BIL",
+    "DBC",
+    "EEM",
+    "EFA",
+    "GLD",
+    "IEF",
+    "SPY",
+    "TLT",
+    "VNQ"
+  ],
+  "archivos": {
+    "BIL_1d.csv": {
+      "sha256": "f46e4cae72729169992e3b2e5ba39e4d786ff4a004e964349d0701ac8640754c",
+      "filas": 2733
+    },
+    "DBC_1d.csv": {
+      "sha256": "62718a64c38261c5fe1fbc505c108a6daa82f45e3dcf5a866b60cedf2d81ccea",
+      "filas": 2733
+    },
+    "EEM_1d.csv": {
+      "sha256": "1f779d8efc0160e265a0218ee7b7ed5eb5e95ffcd67514134c717d307c36b66c",
+      "filas": 2733
+    },
+    "EFA_1d.csv": {
+      "sha256": "8e56117dd53609c745ce54c2c06d8b29bcb56756fc6335c7ee866ad6ee5c9aa1",
+      "filas": 2733
+    },
+    "GLD_1d.csv": {
+      "sha256": "98caa277318125804b34c1306b7b8917575774b8f393b2481a197933d2e183ba",
+      "filas": 2733
+    },
+    "IEF_1d.csv": {
+      "sha256": "2aae582d7701f7e23cc4acdbc8f2dbd1a4fbb12d27b383bca5af2f8c74d49d56",
+      "filas": 2733
+    },
+    "SPY_1d.csv": {
+      "sha256": "d9f0c020696c430c9125cca85d0e1e9fcaf31244f39a023bcf3afdb2bca0ee84",
+      "filas": 2733
+    },
+    "TLT_1d.csv": {
+      "sha256": "10a1d45b3e93abdeb779dda28953ea0551d458eda490f20b4ee7937e576d3f6c",
+      "filas": 2733
+    },
+    "VNQ_1d.csv": {
+      "sha256": "2bd282c6fa65929fa298023616fff4ab51e6af500ac4207fec6f66eef7dcdfe0",
+      "filas": 2733
+    }
+  },
+  "limitaciones": [
+    "Historico de ~10 anos (Alpaca desde 2016): poco poder estadistico para reglas de largo plazo.",
+    "Solo ETF que existen hoy; sin sesgo de supervivencia grave dentro de este universo, pero tampoco historia previa a 2016.",
+    "Precios ajustados por splits y dividendos segun el proveedor; el ajuste de dividendos es retroactivo.",
+    "Costos solo como bps sobre nocional: sin spread real, impuestos ni slippage."
+  ]
+}

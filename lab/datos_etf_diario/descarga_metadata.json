@@ -1,0 +1,56 @@
+{
+  "feed": "sip",
+  "adjustment": "all",
+  "timeframe": "1Day",
+  "inicio": "2016-01-01",
+  "fin": "2026-11-15",
+  "descargado": "2026-11-16T17:19:06",
+  "archivos": {
+    "SPY": {
+      "filas": 2733,
+      "primera": "2016-01-04",
+      "ultima": "2026-11-13"
+    },
+    "EFA": {
+      "filas": 2733,
+      "primera": "2016-01-04",
+      "ultima": "2026-11-13"
+    },
+    "EEM": {
+      "filas": 2733,
+      "primera": "2016-01-04",
+      "ultima": "2026-11-13"
+    },
+    "IEF": {
+      "filas": 2733,
+      "primera": "2016-01-04",
+      "ultima": "2026-11-13"
+    },
+    "TLT": {
+      "filas": 2733,
+      "primera": "2016-01-04",
+      "ultima": "2026-11-13"
+    },
+    "GLD": {
+      "filas": 2733,
+      "primera": "2016-01-04",
+      "ultima": "2026-11-13"
+    },
+    "VNQ": {
+      "filas": 2733,
+      "primera": "2016-01-04",
+      "ultima": "2026-11-13"
+    },
+    "DBC": {
+      "filas": 2733,
+      "primera": "2016-01-04",
+      "ultima": "2026-11-13"
+    },
+    "BIL": {
+      "filas": 2733,
+      "primera": "2016-01-04",
+      "ultima": "2026-11-13"
+    }
+  },
+  "fallidos": []
+}
