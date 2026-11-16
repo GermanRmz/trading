@@ -13,3 +13,6 @@ lab/datos_noticias_alpaca/_parts/
 adv_trading/datos_soxl_sip/
 adv_trading/datos_soxl_sip_limpio/
 adv_trading/resultados/_*.pkl
+
+# riesgo: velas recientes descargadas
+riesgo/datos_recientes/
